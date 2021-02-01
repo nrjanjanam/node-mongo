@@ -2,6 +2,8 @@
 const mongoclient = require('mongodb').MongoClient;
 const assert = require('assert');
 
+const dboper = require('./dboperations');
+
 //define constants to be used
 const url = 'mongodb://localhost:27017/';
 const dbname = 'conFusion';
@@ -13,29 +15,27 @@ mongoclient.connect(url, {useUnifiedTopology:true},(err, client) => {
 
     //using the db and collection that are already created 
     const db = client.db(dbname);
-    const collection = db.collection('dishes');
 
-    //INSERT Operation
-    collection.insertOne({"name": "Uthappizza", "description": "text"}, (err,result) => {
-        assert.strictEqual(err,null);
+    dboper.insertDocument(db, {name:"Vadonut", description:"test"}, 'dishes', (result) => {
+        console.log('Insert Document: \n', result.ops);
 
-        console.log('After insertion: \n');
-        console.log(result.ops); //tells no of operations performed through ops
+        dboper.findDocuments(db, 'dishes', (docs) => {
+            console.log('Found documents: \n' , docs );
 
-        //QUERY Operation
-        collection.find({}).toArray((err, docs) =>{
-            assert.strictEqual(err, null);
+            dboper.updateDocument(db, {name: "Vadonut"}, {description : "Updated Test"}, 'dishes', (result) => {
+                console.log('Updated Document: \n' , result.result);
 
-            console.log('Found: \n');
-            console.log(docs); //all the documents will be printed
+                dboper.findDocuments(db, 'dishes', (docs) => {
+                    console.log('Found documents: \n' , docs );
 
-            //cleaning the collection
-            db.dropCollection('dishes',(err, result) => {
-                assert.strictEqual(err,null);
+                    db.dropCollection('dishes', (result) =>{
+                        console.log('Dropped Collection: \n' , result);
 
-                client.close();
+                        client.close();
+                    });
+                });
             });
-        });
+        })
     });
 });
 //note that all the actions are nested inside each other to ensure EACH OF THEM HAPPEN ONE AFTER THE OTHER
